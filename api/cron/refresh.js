@@ -2,8 +2,10 @@
 // Cridat per Vercel Cron cada dijous a les 19:00 UTC (20:00h hora catalana)
 // Força la renovació de la caché del CDN per als endpoints principals,
 // just quan Gencat actualitza els XMLs amb la nova cartellera setmanal.
+// Després re-desplega filmcat-astro perquè el HTML generat també sigui fresc.
 
-const BASE_URL = 'https://filmcat-api.vercel.app';
+const BASE_URL     = 'https://filmcat-api.vercel.app';
+const ASTRO_HOOK   = 'https://api.vercel.com/v1/integrations/deploy/prj_UeceSuAgyX1EUfIp3EVjBrfrEFQJ/vZa78DDHVL';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -11,7 +13,7 @@ export default async function handler(req, res) {
   const started = Date.now();
 
   try {
-    const [cartellera, cinemes] = await Promise.allSettled([
+    const [cartellera, cinemes, astro] = await Promise.allSettled([
       fetch(`${BASE_URL}/api/cartellera`, {
         headers: {
           'Cache-Control': 'no-cache',
@@ -25,6 +27,11 @@ export default async function handler(req, res) {
           'User-Agent': 'FILMCAT-Cron/1.0',
         },
         signal: AbortSignal.timeout(20000),
+      }),
+      // Re-desplega filmcat-astro amb les dades noves
+      fetch(ASTRO_HOOK, {
+        method: 'POST',
+        signal: AbortSignal.timeout(10000),
       }),
     ]);
 
@@ -41,6 +48,9 @@ export default async function handler(req, res) {
         cinemes: cinemes.status === 'fulfilled'
           ? { ok: true, status: cinemes.value.status }
           : { ok: false, error: cinemes.reason?.message },
+        astro_deploy: astro.status === 'fulfilled'
+          ? { ok: true, status: astro.value.status }
+          : { ok: false, error: astro.reason?.message },
       },
     });
 
