@@ -1,9 +1,9 @@
 /**
- * GET /api/horaris  [Vercel Edge Runtime]
+ * GET /api/horaris  [Vercel Node.js Serverless]
  *
  * Retorna els horaris d'una pel·lícula per als cinemes indicats.
- * Corre a Vercel Edge (IPs de Cloudflare), no a Lambda (IPs d'AWS),
- * per poder accedir als dominis filazero que bloquegen IPs de cloud.
+ * Llegeix primer dels fitxers data/cache/{domain}.json (actualitzats per
+ * GitHub Actions cada hora), i fa live fetch com a fallback si no hi ha cache.
  *
  * Query params:
  *   film  (obligatori) — títol de la pel·lícula
@@ -14,8 +14,6 @@
  */
 
 import { getShowtimes } from '../lib/showtimes.js'
-
-export const config = { runtime: 'edge' }
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -29,46 +27,35 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json',
 }
 
-export default async function handler(req) {
+export default async function handler(req, res) {
+  // CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS })
+    return res.status(204).set(CORS_HEADERS).end()
   }
   if (req.method !== 'GET') {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'Method not allowed' }),
-      { status: 405, headers: CORS_HEADERS }
-    )
+    return res.status(405).set(CORS_HEADERS).json({ ok: false, error: 'Method not allowed' })
   }
 
-  const url = new URL(req.url)
-  const film = url.searchParams.get('film')
-  const dataParam = url.searchParams.get('data')
-  const cinemaParams = url.searchParams.getAll('c')
+  const film        = req.query.film
+  const dataParam   = req.query.data
+  const cinemaParam = req.query.c
 
-  if (!film || film.trim().length === 0) {
-    return new Response(
-      JSON.stringify({ ok: false, error: 'Paràmetre "film" obligatori' }),
-      { status: 400, headers: CORS_HEADERS }
-    )
+  if (!film || String(film).trim().length === 0) {
+    return res.status(400).set(CORS_HEADERS).json({ ok: false, error: 'Paràmetre "film" obligatori' })
   }
 
-  const cinemaNames = cinemaParams.map(s => s.trim()).filter(Boolean)
+  const cinemaNames = (Array.isArray(cinemaParam) ? cinemaParam : cinemaParam ? [cinemaParam] : [])
+    .map(s => s.trim()).filter(Boolean)
+
   const date = dataParam && isValidDate(dataParam) ? dataParam : todayISO()
 
   if (cinemaNames.length === 0) {
-    return new Response(
-      JSON.stringify({ ok: true, film: film.trim(), data: date, cinemes: [] }),
-      { headers: CORS_HEADERS }
-    )
+    return res.set(CORS_HEADERS).json({ ok: true, film: film.trim(), data: date, cinemes: [] })
   }
 
   const cinemes = await getShowtimes(cinemaNames, film.trim(), date)
 
-  return new Response(
-    JSON.stringify({ ok: true, film: film.trim(), data: date, cinemes }),
-    { headers: CORS_HEADERS }
-  )
+  return res.set(CORS_HEADERS).json({ ok: true, film: film.trim(), data: date, cinemes })
 }
