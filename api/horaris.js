@@ -10,6 +10,7 @@
  *   data  (opcional)   — data "YYYY-MM-DD", per defecte avui
  *   c     (repetible)  — nom de cinema (tal com apareix a filmcat)
  *
+ * CORS i Cache-Control s'injecten via vercel.json (header rules).
  * Sempre retorna HTTP 200. Mai falla.
  */
 
@@ -23,19 +24,12 @@ function isValidDate(d) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d)
 }
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-}
-
 export default async function handler(req, res) {
-  // CORS preflight
   if (req.method === 'OPTIONS') {
-    return res.status(204).set(CORS_HEADERS).end()
+    return res.status(204).end()
   }
   if (req.method !== 'GET') {
-    return res.status(405).set(CORS_HEADERS).json({ ok: false, error: 'Method not allowed' })
+    return res.status(405).json({ ok: false, error: 'Method not allowed' })
   }
 
   const film        = req.query.film
@@ -43,7 +37,7 @@ export default async function handler(req, res) {
   const cinemaParam = req.query.c
 
   if (!film || String(film).trim().length === 0) {
-    return res.status(400).set(CORS_HEADERS).json({ ok: false, error: 'Paràmetre "film" obligatori' })
+    return res.status(400).json({ ok: false, error: 'Paràmetre "film" obligatori' })
   }
 
   const cinemaNames = (Array.isArray(cinemaParam) ? cinemaParam : cinemaParam ? [cinemaParam] : [])
@@ -52,10 +46,10 @@ export default async function handler(req, res) {
   const date = dataParam && isValidDate(dataParam) ? dataParam : todayISO()
 
   if (cinemaNames.length === 0) {
-    return res.set(CORS_HEADERS).json({ ok: true, film: film.trim(), data: date, cinemes: [] })
+    return res.json({ ok: true, film: film.trim(), data: date, cinemes: [] })
   }
 
   const cinemes = await getShowtimes(cinemaNames, film.trim(), date)
 
-  return res.set(CORS_HEADERS).json({ ok: true, film: film.trim(), data: date, cinemes })
+  return res.json({ ok: true, film: film.trim(), data: date, cinemes })
 }
