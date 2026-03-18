@@ -34,6 +34,10 @@
   { "filmcat_name": "Cine Yelmo Premium Castelldefels",                          "system": "none",     "domain": null, "web": "https://www.yelmocines.es/cines/cataluna/castelldefels" },
   { "filmcat_name": "Cine Yelmo Westfield La Maquinista",                        "system": "none",     "domain": null, "web": "https://www.yelmocines.es/cines/cataluna/la-maquinista" },
 
+  { "filmcat_name": "Cinemes Sant Cugat",                                        "system": "bizcochito", "domain": "www.cinemessantcugat.com",    "web": "https://www.cinemessantcugat.com" },
+  { "filmcat_name": "Cinemes Can Castellet de Sant Boi de Llobregat",            "system": "bizcochito", "domain": "www.cinemescancastellet.com", "web": "https://www.cinemescancastellet.com" },
+  { "filmcat_name": "MCB Cinema Calafell",                                       "system": "bizcochito", "domain": "www.mcbcinemas.com",          "web": "https://www.mcbcinemas.com" },
+
   { "filmcat_name": "CineBaix de Sant Feliu de Llobregat",                       "system": "none",     "domain": null, "web": "https://cinebaix.cat" },
   { "filmcat_name": "Cinemes Girona",                                            "system": "none",     "domain": null, "web": "https://www.cinesgirona.cat" },
   { "filmcat_name": "Cinema Truffaut de Girona",                                 "system": "none",     "domain": null, "web": "https://www.truffaut.cat" },
