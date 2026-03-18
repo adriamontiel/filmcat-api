@@ -13,6 +13,20 @@ async function fetchXML(url) {
   return r.text();
 }
 
+// "Avui" a la zona horària d'Espanya (CET/CEST = Europe/Madrid).
+// Locale 'sv' (suec) retorna format ISO "YYYY-MM-DD" directament.
+function todayMadrid() {
+  return new Intl.DateTimeFormat('sv', { timeZone: 'Europe/Madrid' }).format(new Date());
+}
+
+// Converteix la data del Gencat "DD/MM/YYYY" → "YYYY-MM-DD" per comparar-la.
+function gencatToISO(d) {
+  if (!d) return '';
+  const parts = d.split('/');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   try {
@@ -25,9 +39,14 @@ export default async function handler(req, res) {
     const films    = parseFilms(filmsXml);
     const sessions = parseSessions(sessionsXml);
 
-    // Agrupa sessions per filmId
+    // Data d'avui a Espanya — calculada una sola vegada per petició
+    const today = todayMadrid(); // ex: "2026-03-18"
+
+    // Agrupa sessions per filmId, descartant dates passades
     const sessionsByFilm = {};
     for (const s of sessions) {
+      if (!s.date || gencatToISO(s.date) < today) continue; // ← filtre dates passades
+
       if (!sessionsByFilm[s.filmId]) sessionsByFilm[s.filmId] = {};
       const key = `${s.cinemaId}|${s.city}`;
       if (!sessionsByFilm[s.filmId][key]) {
@@ -39,7 +58,7 @@ export default async function handler(req, res) {
           dates:   [],
         };
       }
-      if (s.date && !sessionsByFilm[s.filmId][key].dates.includes(s.date)) {
+      if (!sessionsByFilm[s.filmId][key].dates.includes(s.date)) {
         sessionsByFilm[s.filmId][key].dates.push(s.date);
       }
     }
@@ -51,7 +70,7 @@ export default async function handler(req, res) {
         cinema: c.cinema,
         city:   c.city,
         lang:   c.lang,
-        times:  c.dates.sort(), // dates com a "temps" fins que tinguem hores
+        times:  c.dates.sort(),
       }));
     }
 
