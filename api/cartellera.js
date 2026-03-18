@@ -73,7 +73,7 @@ export default async function handler(req, res) {
         cinema: c.cinema,
         city:   c.city,
         lang:   c.lang,
-        times:  c.dates.sort(),
+        times:  c.dates.sort((a, b) => gencatToISO(a).localeCompare(gencatToISO(b))),
       }));
     }
 
