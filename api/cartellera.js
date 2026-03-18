@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       updatedAt:   new Date().toISOString(),
       total:       films.length,
       films:       withSessions,
-      comingSoon:  comingSoon.slice(0, 10),
+      comingSoon:  comingSoon,
     });
 
   } catch (error) {
