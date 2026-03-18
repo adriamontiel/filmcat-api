@@ -71,7 +71,7 @@ export default async function handler(req, res) {
         city:   c.city,
         lang:   c.lang,
         times:  c.dates.sort((a, b) => gencatToISO(a).localeCompare(gencatToISO(b))),
-      }));
+      })).sort((a, b) => gencatToISO(a.times[0]).localeCompare(gencatToISO(b.times[0])));
     }
 
     const withSessions = films.filter(f => f.sessions.length > 0);
