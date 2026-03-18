@@ -42,10 +42,13 @@ export default async function handler(req, res) {
     // Data d'avui a Espanya — calculada una sola vegada per petició
     const today = todayMadrid(); // ex: "2026-03-18"
 
-    // Agrupa sessions per filmId, descartant dates passades
+    // Agrupa sessions per filmId, descartant dates passades i sessions no comercials.
+    // CICLEID = '1' → sessió comercial normal.
+    // CICLEID != '1' → sessió especial (biblioteques, cicles culturals, online, escolars).
     const sessionsByFilm = {};
     for (const s of sessions) {
       if (!s.date || gencatToISO(s.date) < today) continue; // ← filtre dates passades
+      if (s.cicleId && s.cicleId !== '1') continue;         // ← filtre sessions no comercials
 
       if (!sessionsByFilm[s.filmId]) sessionsByFilm[s.filmId] = {};
       const key = `${s.cinemaId}|${s.city}`;
